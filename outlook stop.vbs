@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run "taskkill /f /im OUTLOOK.EXE", 0, False

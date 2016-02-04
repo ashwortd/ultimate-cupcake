@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run "taskkill /f /im EXCEL.EXE", 0, False

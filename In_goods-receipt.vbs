@@ -12,28 +12,62 @@ Dim infoResult
 Dim strDir, objFile, returnvalue
 Dim ExcelSheet,ExcelApp,ExcelWorkbook
 Dim Row,NumLines,test2,POField,strCount,objRange,test3,EDIResult
-Dim PMxReadRow,ItmNum,ItmCat,ItmNumFlag,EDIField
+Dim PMxReadRow,ItmNum,ItmCat,ItmNumFlag,EDIField,completeField
+Dim costCollector
 
 '************Ask for data file
-Set objDialog = CreateObject("UserAccounts.CommonDialog")
+file = ChooseFile(defaultLocalDir)
+MsgBox file
 
-objDialog.Filter = "VBScript Data Files |*.xls;*.xlsx;*.xlsm|All Files|*.*"
-objDialog.FilterIndex = 1
-objDialog.InitialDir = "C:\Scripts"
-intResult = objDialog.ShowOpen
- 
-If intResult = 0 Then
-    Wscript.Quit
-'Else
-'    Wscript.Echo objDialog.FileName
-End If
+Function ChooseFile (ByVal initialDir)
+    Set objWMIService = GetObject("winmgmts:\\.\root\cimv2")
+
+    Set colItems = objWMIService.ExecQuery("Select * from Win32_OperatingSystem")
+    Dim winVersion
+
+    ' This collection should contain just the one item
+    For Each objItem in colItems
+        'Caption e.g. Microsoft Windows 7 Professional
+        'Name e.g. Microsoft Windows 7 Professional |C:\windows|...
+        'OSType e.g. 18 / OSArchitecture e.g 64-bit
+        'Version e.g 6.1.7601 / BuildNumber e.g 7601
+        winVersion = CInt(Left(objItem.version, 1))
+    Next
+    Set objWMIService = Nothing
+    Set colItems = Nothing
+
+    If (winVersion <= 5) Then
+        ' Then we are running XP and can use the original mechanism
+        Set cd = CreateObject("UserAccounts.CommonDialog")
+        cd.InitialDir = initialDir
+        cd.Filter = "VBScript Data Files |*.xls;*.xlsx;*.xlsm|All Files|*.*"
+        ' filter index 4 would show all files by default
+        ' filter index 1 would show zip files by default
+        cd.FilterIndex = 1
+        If cd.ShowOpen = True Then
+            ChooseFile = cd.FileName
+        Else
+            ChooseFile = ""
+        End If
+        Set cd = Nothing    
+
+    Else
+        ' We are running Windows 7 or later
+        Set shell = CreateObject( "WScript.Shell" )
+        Set ex = shell.Exec( "mshta.exe ""about: <input type=file id=X><script>X.click();new ActiveXObject('Scripting.FileSystemObject').GetStandardStream(1).WriteLine(X.value);close();resizeTo(0,0);</script>""" )
+        ChooseFile = Replace( ex.StdOut.ReadAll, vbCRLF, "" )
+
+        Set ex = Nothing
+        Set shell = Nothing
+    End If
+End Function
 '****************
 Set ExcelApp = CreateObject("Excel.Application")
 ExcelApp.Visible=True
-Set ExcelWorkbook = ExcelApp.Workbooks.Open (objDialog.FileName)
+Set ExcelWorkbook = ExcelApp.Workbooks.Open (file)
 Set ExcelSheet = ExcelWorkbook.Worksheets(1)
 
-strDir = "D:\Documents and Settings\dma02\Desktop\"
+strDir = "C:\Users\dma02\Inbound-Goods_Receipts\"
 File1 = "Ship-to_suppliers.txt"
 FileToRead = strDir & File1
 Set objFSO = CreateObject("Scripting.FileSystemObject")
@@ -64,21 +98,21 @@ Sub transaction_type
  	Else
  		infoResult="Goods Receipt"
  	End If
-	ExcelSheet.cells(row,22).value= infoResult
+	ExcelSheet.cells(row,28).value= infoResult
 	If objdictionary.Exists(test3) Then
 	  EDIResult="EDI Vendor"
 	 Else
 	 	EDIResult="Non-EDI Vendor"
 	 End If
-	 ExcelSheet.cells(Row,25)=EDIResult    
+	 ExcelSheet.cells(Row,30)=EDIResult    
 End Sub
 Row=1
 Do Until excelsheet.cells(row+1,1)=""
 	Row = row+1
 	Call transaction_type
 Loop
-ExcelSheet.cells(1,22).value="Shipment Type"
-ExcelSheet.cells(1,23).value="Subcontract Check"
+ExcelSheet.cells(1,28).value="Shipment Type"
+ExcelSheet.cells(1,29).value="Subcontract Check"
 Set objRange = ExcelApp.Range("A1","W1")
 objrange.Font.Bold=True
 objrange.Font.ColorIndex=2
@@ -89,9 +123,20 @@ Sub countStr
 Row=2
 	Do Until ExcelSheet.cells(Row,1)=""
 	
-	POField=ExcelSheet.cells(Row,12).value
-	strCount=Len(POField)
-	If strCount=6 Then
+		POField=ExcelSheet.cells(Row,12).value
+		strCount=Len(POField)
+			If strCount=6 Then
+				Set objRange = ExcelSheet.cells(Row,1).EntireRow
+				objRange.Delete
+				Row=Row-1
+			End If
+		Row=Row+1
+	Loop
+Row=2
+	Do Until ExcelSheet.cells(Row,1)=""
+	
+	EDIField=ExcelSheet.cells(Row,30)
+	If EDIField = "EDI Vendor" Then
 		Set objRange = ExcelSheet.cells(Row,1).EntireRow
 		objRange.Delete
 		Row=Row-1
@@ -101,8 +146,18 @@ Row=2
 Row=2
 	Do Until ExcelSheet.cells(Row,1)=""
 	
-	EDIField=ExcelSheet.cells(Row,25)
-	If EDIField = "EDI Vendor" Then
+	completeField=ExcelSheet.cells(Row,18)
+	If completeField = "N/A" Then
+		Set objRange = ExcelSheet.cells(Row,1).EntireRow
+		objRange.Delete
+		Row=Row-1
+	End If
+	Row=Row+1
+	Loop
+Row=2
+	Do Until ExcelSheet.cells(Row,1)=""
+	costCollector=ExcelSheet.cells(Row,24)
+	If costCollector = "Project Number" Then
 		Set objRange = ExcelSheet.cells(Row,1).EntireRow
 		objRange.Delete
 		Row=Row-1
@@ -145,7 +200,7 @@ Sub CheckPO
 	Do Until ExcelSheet.cells(Row,1)=""
 		ItmNumFlag="No"
 		PMxReadRow=0
-		If ExcelSheet.cells(Row,22)="Goods Receipt" then
+		If ExcelSheet.cells(Row,28)="Goods Receipt" then
 			session.findbyid("wnd[0]/tbar[1]/btn[17]").press
 			Session.findbyid("wnd[1]/usr/subSUB0:SAPLMEGUI:0003/ctxtMEPO_SELECT-EBELN").text=ExcelSheet.cells(Row,12)
 			session.findbyid("wnd[1]/usr/subSUB0:SAPLMEGUI:0003/radMEPO_SELECT-BSTYP_F").select
@@ -178,10 +233,10 @@ Sub CheckPO
 				ItmCat=session.findbyid("wnd[0]/usr/subSUB0:SAPLMEGUI:0019/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211/ctxtMEPO1211-EPSTP[3,"&PMxReadRow&"]").text
 				On Error Goto 0
 					If ItmCat="L" Then
-						ExcelSheet.cells(Row,23).value="Inbound"
+						ExcelSheet.cells(Row,28).value="Inbound"
 					End If
 					If ItmCat<>"L" Then
-						ExcelSheet.cells(Row,23).value="not Subcontracted"
+						ExcelSheet.cells(Row,29).value="not Subcontracted"
 					End If
 				Row=Row+1
 			End If
@@ -191,8 +246,8 @@ Sub CheckPO
 			Loop
 			
 		End if
-		If ExcelSheet.cells(Row,22)="Inbound" Then
-			ExcelSheet.cells(Row,23).value="checked"
+		If ExcelSheet.cells(Row,28)="Inbound" Then
+			ExcelSheet.cells(Row,29).value="checked"
 			Row=Row+1
 		End If
 		

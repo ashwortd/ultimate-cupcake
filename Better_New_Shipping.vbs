@@ -139,6 +139,17 @@ Function ChooseFile (ByVal initialDir)
     End If
 End Function
 
+Function statPrePay()
+	session.findById("wnd[0]/usr/subSUBSCREEN_HEADER:SAPMV45A:4021/btnBT_HEAD").press 
+	session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\12").select 
+		If session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\12/ssubSUBSCREEN_BODY:SAPMV45A:4309/cmbVBAK-KVGR3").key = "ZPP" Then
+			statPrePay="Yes"
+		 Else
+		 	statPrePay="No"
+		End If
+	session.findById("wnd[0]/tbar[0]/btn[3]").press
+End Function
+
 Function sbarStatus()
 	sbarStatus = Session.findbyid("wnd[0]/sbar").text
 End Function
@@ -185,6 +196,8 @@ Sub PMxOut
 	session.findById("wnd[0]").maximize
 	session.findById("wnd[0]/usr/ctxtVBAK-VBELN").text =SOrder
 	session.findById("wnd[0]").sendVKey 0
+
+			
 	On Error Resume Next
 	'session.findById("wnd[1]").sendVKey 0
 	Wnd1TTL=session.findbyid("wnd[1]").text
@@ -215,6 +228,10 @@ Sub PMxOut
 	End If
 
 On Error Goto 0
+	If statPrePay="Yes" Then
+	 	ExcelSheet.Cells(Row,12).Value = "Order is Prepay Non-billable"
+	 	Exit Sub
+	End If
 	
 	For x= 0 To 9
 		If FrCom(x)="" Then 
@@ -232,20 +249,21 @@ On Error Goto 0
 	session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4400/subSUBSCREEN_TC:SAPMV45A:4900/tblSAPMV45ATCTRL_U_ERF_AUFTRAG/ctxtRV45A-MABNR[1,"&PMxRow&"]").setFocus
 	'session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4400/subSUBSCREEN_TC:SAPMV45A:4900/tblSAPMV45ATCTRL_U_ERF_AUFTRAG/ctxtRV45A-MABNR[1,"&PMxRow&"]").caretPosition = 9
 	session.findById("wnd[0]").sendVKey 0
+		On Error Resume Next
+	stat2=session.findbyId("wnd[1]").text
+	On Error Goto 0
+	If Right(stat2,11) ="Information" Then
+		ExcelSheet.cells(Row,13)=session.findbyid("wnd[1]/usr/txtMESSTXT1").text
+		session.findbyid("wnd[1]/tbar[0]/btn[0]").press
+		stat2="nope"
+	End if
 	If Left(sbarStatus,8)="No goods" Then
 		session.findById("wnd[0]").sendVKey 0
 	End if
 	session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4400/subSUBSCREEN_TC:SAPMV45A:4900/tblSAPMV45ATCTRL_U_ERF_AUFTRAG/ctxtRV45A-MABNR[1,"&PMxRow&"]").setFocus
 	session.findById("wnd[0]").sendVKey 2
 	stat1=session.findById("wnd[0]/sbar").Text
-	On Error Resume Next
-	stat2=session.findbyId("wnd[1]").text
-	On Error Goto 0
-	If stat2 ="Information" Then
-		ExcelSheet.cells(Row,13)=session.findbyid("wnd[1]/usr/txtMESSTXT1").text
-		session.findbyid("wnd[1]/tbar[0]/btn[0]").press
-		stat2="nope"
-	End if	
+	
 	If Left(stat1,8)="No goods" then
 		session.findById("wnd[0]").sendVKey 0
 	End If

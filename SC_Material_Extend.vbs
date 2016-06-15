@@ -4,14 +4,34 @@
 Option Explicit
 
 'File Definitions
-Const fileName="SC_Material_Data"
-Const fileDirectory=""
+Const fileName="SC_Material_Data.xlsm"
+Const fileDirectory="\\winfile02\data\CustSvc\Parts\Pmx Scripting\Script Data\"
 Const showWindow = True
+Dim excelFileLocation,excelApp,excelWorkbook,excelWorksheet
+Dim intRow,userName,password,window
 
+'Functions
+
+Function strMsgBox(window)
+	strMsgBox=session.findById("wnd["&window&"]/usr/txtMESSTXT1").text
+End Function
+
+Function sbarStatus()
+	sbarStatus = Session.findbyid("wnd[0]/sbar").text
+End Function
+
+Function currentTab()
+	currentTab=Session.activewindow.guifocus.ID
+	currentTab= Left(currentTab,50)
+	currentTab= Right(currentTab,8)
+End Function
 'File locations
-Dim excelFileLocation
-excelFileLocation=fileDirectory&fileName
 
+intRow=InputBox("What is the starting row to extend?")
+Set excelApp=CreateObject("Excel.Application")
+excelFileLocation=fileDirectory&fileName
+Set excelWorkbook=excelApp.workbooks.open(excelFileLocation)
+excelApp.visible=True
 OpenSAP()
 
 sub openSAP
@@ -60,7 +80,9 @@ sub openSAP
 	session.findById("wnd[0]").maximize
 	
 	' Login
-	If isNewConn then
+	If isNewConn Then
+		userName=InputBox("SAP PE1 Username:")
+		password=InputBox("SAP PE1 Password:")
 		session.findById("wnd[0]/usr/txtRSYST-BNAME").Text = userName
 		session.findById("wnd[0]/usr/pwdRSYST-BCODE").Text = password
 		session.findById("wnd[0]").sendVKey 0
@@ -99,3 +121,15 @@ End Sub
 
 Sub extendMaterial
 	session.StartTransaction("MM01")
+	session.findById("wnd[0]/usr/ctxtRMMG1-MATNR").text = excelWorksheet.Cells(Row,1).Value
+	session.findById("wnd[0]/usr/cmbRMMG1-MBRSH").key = "A"
+	session.findById("wnd[0]/usr/cmbRMMG1-MTART").key = "ZENG"
+	session.findById("wnd[0]").sendVKey 0
+		If sbarStatus ="Material type Project Materials copied from master record" Then
+			Session.findById("wnd[0]").sendVKey 0
+		End If
+		If sbarStatus ="Material type Standard Components copied from master record" Then
+			Session.findById("wnd[0]").sendVKey 0
+		End if
+	session.findById("wnd[1]/tbar[0]/btn[20]").press
+End Sub

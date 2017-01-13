@@ -3,6 +3,10 @@ Dim ExcelApp,ExcelWorkbook,ExcelSheet,file,RowA,i
 Dim Row,SOrder,FrCom(9),FrPro(9),InvSum(9),TxtCo,x,ExcelSheet2
 Dim FrBill,z,FrBill2,Wnd1TTL,MessText,MainTtl,h,p,j
 Dim PMx3,MtrLn,PMxRow,stat1,stat2,strContinue,mtlNum,strTrackChk,zebra
+Dim costSum(9),costFreight
+Const costMarkup =1.25 
+
+
 
 Function password()
 	password=InputBox("SAP PE1 Password")
@@ -198,11 +202,13 @@ For i=0 To 9
 		FrCom(i)= ExcelSheet.Cells(Row,4).Value
 		FrPro(i)=ExcelSheet.Cells(Row,5).Value
 		InvSum(i)=ExcelSheet.Cells(Row,10).Value
+		'costSum(i)=ExcelSheet.Cells(Row,10).Value
 		ExcelSheet.Cells(Row,15).Value="Added"
 	 Else
 	 	FrCom(i)= ExcelSheet.Cells(Row,4).Value
 		FrPro(i)=ExcelSheet.Cells(Row,5).Value
 		InvSum(i)=ExcelSheet.Cells(Row,10).Value
+		'costSum(i)=ExcelSheet.Cells(Row,10).Value
 		'Call PMxOut
 		Exit For
 	End If
@@ -225,17 +231,17 @@ Sub PMxOut
 	Wnd1TTL=session.findbyid("wnd[1]").text
 	MessText=session.findbyid("wnd[1]/usr/txtMESSTXT2").text
 	If Left(Wnd1TTL,4)="Help" Then
-		ExcelSheet.Cells(Row,12).Value = "Order Closed"
+		ExcelSheet.Cells(Row,14).Value = "Order Closed"
 		session.findbyid("wnd[1]/tbar[0]/btn[5]").press
 		Wnd1TTL="none"
 		Exit Sub
  	ElseIf Left(MessText,4)="Over" Then
- 		ExcelSheet.Cells(Row,13).Value = "Warning - Not Processed"
+ 		ExcelSheet.Cells(Row,16).Value = "Warning - Not Processed"
 		session.findbyid("wnd[1]/tbar[0]/btn[5]").press
 		MessText="none"
 		Exit Sub
 	ElseIf Left(sbarStatus,5)="No au" Then
-		ExcelSheet.Cells(Row,13).Value = sbarStatus
+		ExcelSheet.Cells(Row,14).Value = sbarStatus
 		Exit Sub
 	End If
 	session.findById("wnd[1]").sendVKey 0
@@ -243,7 +249,7 @@ Sub PMxOut
 	MainTtl=Left(MainTtl,21)
 	MainTtl=Right(MainTtl,2)
 	If MainTtl="BP" Then
-		ExcelSheet.Cells(Row,13).Value = "Warning - BP Order freight not added"
+		ExcelSheet.Cells(Row,16).Value = "Warning - BP Order freight not added"
 		MainTtl="none"
 		session.findbyid("wnd[0]/tbar[0]/btn[3]").press
 		Exit Sub
@@ -251,7 +257,7 @@ Sub PMxOut
 
 On Error Goto 0
 	If statPrePay="Yes" Then
-	 	ExcelSheet.Cells(Row,12).Value = "Order is Prepay Non-billable"
+	 	ExcelSheet.Cells(Row,14).Value = "Order is Prepay Non-billable"
 	 	Exit Sub
 	End If
 	
@@ -267,7 +273,7 @@ On Error Goto 0
 	Call FindRow2
 		If strContinue="No" Then
 			session.findbyid("wnd[0]/tbar[0]/btn[3]").press
-			ExcelSheet.cells(Row,13)="Already invoiced"
+			ExcelSheet.cells(Row,14)="Already invoiced"
 			Exit Sub
 		End If
 			
@@ -281,7 +287,7 @@ On Error Goto 0
 	stat2=session.findbyId("wnd[1]").text
 	On Error Goto 0
 	If Right(stat2,11) ="Information" Then
-		ExcelSheet.cells(Row,13)=session.findbyid("wnd[1]/usr/txtMESSTXT1").text
+		ExcelSheet.cells(Row,16)=session.findbyid("wnd[1]/usr/txtMESSTXT1").text
 		session.findbyid("wnd[1]/tbar[0]/btn[0]").press
 		stat2="nope"
 	End if
@@ -306,14 +312,15 @@ On Error Goto 0
 	FrBill=0
 	For z=0 To 9
 		If InvSum(z)="" Then 
-		Exit For
+			Exit For
 		End If
 	 FrBill= FrBill+InvSum(z)
+	 'costFreight=costFreight+costSum(z)
 	 Next
 	 If FrBill<30 Then
 	 	FrBill2=30
 	  Else
-	    FrBill2=FrBill
+	    FrBill2=FormatNumber(FrBill*costMarkup,2)
 	 End If
 	 session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\05").select
 	 session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\05/ssubSUBSCREEN_BODY:SAPLV69A:6201/subSUBSCREEN_PUSHBUTTONS:SAPLV69A:1000/btnBT_KOAN").press
@@ -337,7 +344,7 @@ On Error Goto 0
 	 session.findById("wnd[1]").close
 	 session.findById("wnd[2]/usr/btnBUTTON_2").press
 	 On Error Goto 0
-	 ExcelSheet.Cells(Row,12).Value = session.findById("wnd[0]/sbar").Text
+	 ExcelSheet.Cells(Row,14).Value = session.findById("wnd[0]/sbar").Text
 		 ExcelSheet2.Cells(RowA,2).Value=FrBill
 		 RowA=RowA+1
   End Sub

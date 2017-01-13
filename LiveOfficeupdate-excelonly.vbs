@@ -74,7 +74,7 @@ End Function
 Set objExcel = CreateObject("Excel.Application")
 objExcel.Visible=True
 Set objWorkbook = objExcel.Workbooks.Open (file)
-Set objSheet = objWorkbook.Worksheets("Sheet1")
+Set objSheet = objWorkbook.Worksheets(1)
 
 
 Row=InputBox("Row Number?")
@@ -99,9 +99,9 @@ Session.findById("wnd[0]").sendVKey 0
 'Loop Until wndStatus = ""
 session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\02/ssubSUBSCREEN_BODY:SAPMV45A:4411/subSUBSCREEN_TC:SAPMV45A:4912/tblSAPMV45ATCTRL_U_ERF_ANGEBOT/ctxtRV45A-MABNR[1,0]").setFocus
 session.findById("wnd[0]").sendVKey 2
-objSheet.Cells(Row,41).Value=session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4451/ctxtVBAP-AWAHR").text
+objSheet.Cells(Row,40).Value=session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4451/ctxtVBAP-AWAHR").text
 Session.findbyid("wnd[0]/tbar[1]/btn[19]").press
-objSheet.Cells(Row,42).Value=session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4451/ctxtVBAP-AWAHR").text
+objSheet.Cells(Row,41).Value=session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4451/ctxtVBAP-AWAHR").text
 Session.findbyid("wnd[0]/tbar[0]/btn[3]").press
 
 Session.findById("wnd[0]/usr/subSUBSCREEN_HEADER:SAPMV45A:4021/btnBT_HEAD").press
@@ -109,28 +109,28 @@ Session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08").select
 
 session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[0]/shell").selectitem "0020","Column1"
 session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[0]/shell").doubleclickitem "0020","Column1"
-objSheet.Cells(Row,39).Value=(session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[1]/shell").text)
+objSheet.Cells(Row,38).Value=(session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[1]/shell").text)
 
 session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[0]/shell").selectitem "0035","Column1"
 session.findById("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[0]/shell").doubleclickitem "0035","Column1"
-objSheet.Cells(Row,40).Value=(session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[1]/shell").text)
+objSheet.Cells(Row,39).Value=(session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\08/ssubSUBSCREEN_BODY:SAPMV45A:4152/subSUBSCREEN_TEXT:SAPLV70T:2100/cntlSPLITTER_CONTAINER/shellcont/shellcont/shell/shellcont[1]/shell").text)
 Session.findbyid("wnd[0]/tbar[0]/btn[3]").press
 Session.findbyid("wnd[0]/tbar[0]/btn[3]").press
 Row=Row+1
 Loop
 
 '****Execl sheet cleanup
-objSheet.Cells(1,39).Value="Document Description"
+objSheet.Cells(1,38).Value="Document Description"
+objSheet.cells(1,38).font.bold=True
+objSheet.cells(1,38).font.colorindex = 2
+objSheet.cells(1,38).interior.colorindex=11
+objSheet.Columns(38).columnwidth=30
+objSheet.Range("AL:AM").wraptext=true
+objSheet.Cells(1,39).Value="Document Text Notes"
 objSheet.cells(1,39).font.bold=True
 objSheet.cells(1,39).font.colorindex = 2
 objSheet.cells(1,39).interior.colorindex=11
-objSheet.Columns(39).columnwidth=30
-objSheet.Range("AL:AM").wraptext=true
-objSheet.Cells(1,40).Value="Document Text Notes"
-objSheet.cells(1,40).font.bold=True
-objSheet.cells(1,40).font.colorindex = 2
-objSheet.cells(1,40).interior.colorindex=11
-objSheet.Columns(40).columnwidth=90
+objSheet.Columns(39).columnwidth=90
 objSheet.columns.autofit
 
 

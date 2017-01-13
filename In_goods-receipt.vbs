@@ -14,7 +14,7 @@ Dim ExcelSheet,ExcelApp,ExcelWorkbook
 Dim Row,NumLines,test2,POField,strCount,objRange,test3,EDIResult
 Dim PMxReadRow,ItmNum,ItmCat,ItmNumFlag,EDIField,completeField
 Dim costCollector
-
+Dim vrc,x
 '************Ask for data file
 file = ChooseFile(defaultLocalDir)
 MsgBox file
@@ -205,6 +205,12 @@ Sub CheckPO
 			Session.findbyid("wnd[1]/usr/subSUB0:SAPLMEGUI:0003/ctxtMEPO_SELECT-EBELN").text=ExcelSheet.cells(Row,12)
 			session.findbyid("wnd[1]/usr/subSUB0:SAPLMEGUI:0003/radMEPO_SELECT-BSTYP_F").select
 			session.findbyid("wnd[1]/tbar[0]/btn[0]").press
+			x=1
+			On Error Resume Next
+			session.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0016/subSUB3:SAPLMEVIEWS:1100/subSUB1:SAPLMEVIEWS:4002/btnDYN_4000-BUTTON").press
+			session.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0013/subSUB3:SAPLMEVIEWS:1100/subSUB1:SAPLMEVIEWS:4002/btnDYN_4000-BUTTON").press
+			On Error Goto 0
+			vrc = session.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0019/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211").VisibleRowCount
 			Do Until ItmNumFlag="Yes"
 				On Error Resume Next
 				ItmNum=session.findbyid("wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211/txtMEPO1211-EBELP[1,"&PMxReadRow&"]").text
@@ -242,7 +248,17 @@ Sub CheckPO
 			End If
 			If ItmNum <> test2 Then
 				PMxReadRow=PMxReadRow+1
+					if PMxReadRow=vrc Then
+					session.findbyid("wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211").verticalScrollbar.position=vrc*x
+					x+1
+					PMxReadRow=0
+				End If
 			End If
+'			If PMxReadRow=vrc Then
+'				session.findbyid("wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211").verticalScrollbar.position=vrc*x
+'				x+1
+'				PMxReadRow=0
+'			End If
 			Loop
 			
 		End if

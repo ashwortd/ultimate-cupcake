@@ -2,6 +2,7 @@ Dim ExcelApp,ExcelWorkbook,ExcelSheet,Row
 Dim IniStat, LineNum,ItmChk,WndName,ItmRow,GRComplete
 Dim Itemtest(3),ibchk,ibchk2,log1,LogStat,WndName1
 Dim inboundItemNm
+Dim strDate
 If Not IsObject(application) Then
    Set SapGuiAuto  = GetObject("SAPGUI")
    Set application = SapGuiAuto.GetScriptingEngine
@@ -81,6 +82,8 @@ Set ExcelApp = CreateObject("Excel.Application")
 ExcelApp.Visible=True
 Set ExcelWorkbook = ExcelApp.Workbooks.Open (file)
 Set ExcelSheet = ExcelWorkbook.Worksheets(1)
+
+strDate=InputBox("What is the posting date (MM/DD/YYYY) ?")
 
 session.findById("wnd[0]").maximize
 session.findById("wnd[0]/tbar[0]/okcd").text = "/nmigo"
@@ -204,6 +207,8 @@ On Error Resume Next
 If Right(wnd1Status,4)="logs" Then
 	ExcelSheet.cells(Row,34).value=session.findbyid("wnd[1]/usr/lbl[10,3]").text
 	session.findbyid("wnd[1]/tbar[0]/btn[0]").press
+	session.findbyid("wnd[0]/usr/ssubSUB_MAIN_CARRIER:SAPLMIGO:0003/subSUB_HEADER:SAPLMIGO:0101/subSUB_HEADER:SAPLMIGO:0100/tabsTS_GOHEAD/tabpOK_GOHEAD_GENERAL/ssubSUB_TS_GOHEAD_GENERAL:SAPLMIGO:0110/ctxtGOHEAD-BUDAT").text=strDate'edit for year when needed.
+	
 End If
 On Error Goto 0
 On Error Resume Next
@@ -269,6 +274,10 @@ Sub makeInbound()
 		ExcelSheet.Cells(Row,31).Value = session.findById("wnd[0]/sbar").Text
 		Exit Sub
 	End If
+		If Left(sbarStatus,4)="Item" Then
+		session.findById("wnd[0]").sendVKey 0
+	End If
+	
 	i=0
 	Do
 	session.findbyid("wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\02").select

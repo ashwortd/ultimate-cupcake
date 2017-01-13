@@ -242,7 +242,7 @@ Sub costOutBom
 	Session.findById("wnd[0]/usr/ctxtRMMG1-MATNR").text = part
 	session.findById("wnd[0]/tbar[0]/btn[0]").press
 
-	If session.findById("wnd[1]").text = "Select View(s)" Then
+	If Right(session.findById("wnd[1]").text,7) = "View(s)" Then
 		session.findById("wnd[1]/tbar[0]/btn[20]").press
 		session.findById("wnd[1]/tbar[0]/btn[0]").press
 		On Error Resume Next
@@ -298,10 +298,10 @@ Sub costOutBom
 	session.findById("wnd[0]/usr/ctxtRC27M-MATNR").text = part
 	session.findById("wnd[0]/usr/ctxtRC27M-WERKS").text = plant
 	session.findById("wnd[0]/tbar[0]/btn[0]").press
-	If session.findById("wnd[0]/titl").text = "Display Routing: Initial Screen" Then
+	If Right(session.findById("wnd[0]").text,14) = "Initial Screen" Then
 		session.findById("wnd[1]").close
 		ws.Cells(workingRow,5).Value = "NO ROUTING EXISTS!"
-	ElseIf session.findById("wnd[0]/titl").text <> "Display Routing: Initial Screen" And plant = "500E" Then
+	ElseIf Right(session.findById("wnd[0]").text,14) <> "Initial Screen" And plant = "500E" Then
 		ws.Cells(workingRow, 1).Value = ""
 		ws.Cells(workingRow, 3).Value = ""
 		ws.Cells(workingRow, 4).Value = ""
@@ -705,11 +705,11 @@ Sub costOutBom
 		setupHours = 0
 		laborTotal = 0
 		For i = 0 To session.findById("wnd[0]/usr/txtRC27X-ENTRIES").text - 1
-			If session.findById("wnd[0]/usr/tblSAPLCPDITCTRL_1400/txtPLPOD-VGW01[11,"&i&"]").text <> "" Then
+			If session.findById("wnd[0]/usr/tblSAPLCPDITCTRL_1400/txtPLPOD-VGW01[13,"&i&"]").text <> "" Then
 			setupHours = setupHours + session.findById("wnd[0]/usr/tblSAPLCPDITCTRL_1400/txtPLPOD-VGW01[11,"&i&"]").text
 			End If
 			
-			If session.findById("wnd[0]/usr/tblSAPLCPDITCTRL_1400/txtPLPOD-VGW02[14,"&i&"]").text <> "" Then
+			If session.findById("wnd[0]/usr/tblSAPLCPDITCTRL_1400/txtPLPOD-VGW02[16,"&i&"]").text <> "" Then
 			laborTotal = laborTotal + session.findById("wnd[0]/usr/tblSAPLCPDITCTRL_1400/txtPLPOD-VGW02[14,"&i&"]").text
 			End If 
 		Next
@@ -762,7 +762,7 @@ Sub GetComponentCosts
 		Exit Sub
 	End If
 	
-	If session.findById("wnd[1]").text = "Select View(s)" Then
+	If Right(session.findById("wnd[1]").text,7) = "View(s)" Then
 		session.findById("wnd[1]/tbar[0]/btn[20]").press
 		session.findById("wnd[1]/tbar[0]/btn[0]").press
 		On Error Resume Next

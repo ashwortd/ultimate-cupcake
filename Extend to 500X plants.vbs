@@ -23,18 +23,57 @@ Dim ex,wb,ws,MRPController,PriceControl2
 
 session.findById("wnd[0]").maximize
 
-Set ex = WScript.CreateObject("Excel.application")
+
+file = ChooseFile(defaultLocalDir)
+							    MsgBox file
+							    
+							    Function ChooseFile (ByVal initialDir)
+							        Set objWMIService = GetObject("winmgmts:\\.\root\cimv2")
+							    
+							        Set colItems = objWMIService.ExecQuery("Select * from Win32_OperatingSystem")
+							        Dim winVersion
+							    
+							        ' This collection should contain just the one item
+							        For Each objItem in colItems
+							            'Caption e.g. Microsoft Windows 7 Professional
+							            'Name e.g. Microsoft Windows 7 Professional |C:\windows|...
+							            'OSType e.g. 18 / OSArchitecture e.g 64-bit
+							            'Version e.g 6.1.7601 / BuildNumber e.g 7601
+							            winVersion = CInt(Left(objItem.version, 1))
+							        Next
+							        Set objWMIService = Nothing
+							        Set colItems = Nothing
+							    
+							        If (winVersion <= 5) Then
+							            ' Then we are running XP and can use the original mechanism
+							            Set cd = CreateObject("UserAccounts.CommonDialog")
+							            cd.InitialDir = initialDir
+							            cd.Filter = "VBScript Data Files |*.xls;*.xlsx;*.xlsm|All Files|*.*"
+							            ' filter index 4 would show all files by default
+							            ' filter index 1 would show zip files by default
+							            cd.FilterIndex = 1
+							            If cd.ShowOpen = True Then
+							                ChooseFile = cd.FileName
+							            Else
+							                ChooseFile = ""
+							            End If
+							            Set cd = Nothing    
+							    
+							        Else
+							            ' We are running Windows 7 or later
+							            Set shell = CreateObject( "WScript.Shell" )
+							            Set ex = shell.Exec( "mshta.exe ""about: <input type=file id=X><script>X.click();new ActiveXObject('Scripting.FileSystemObject').GetStandardStream(1).WriteLine(X.value);close();resizeTo(0,0);</script>""" )
+							            ChooseFile = Replace( ex.StdOut.ReadAll, vbCRLF, "" )
+							    
+							            Set ex = Nothing
+							            Set shell = Nothing
+							        End If
+							    End Function
+												    
+Set ex = CreateObject("Excel.Application")
 ex.Visible = True
-Set objDialog = CreateObject("UserAccounts.CommonDialog")   
-objDialog.Filter = "VBScript Data Files |*.xls;*.xlsx;*.xlsm|All Files|*.*"
-objDialog.FilterIndex = 1								    
-objDialog.InitialDir = "C:\Scripts"	
-intResult = objDialog.ShowOpen				
-If intResult = 0 Then									    
-    Wscript.Quit										    
-End If													    
-Set wb = ex.Workbooks.Open(objDialog.FileName)
-Set ws = wb.Sheets(wb.ActiveSheet.Name)
+Set wb = ex.Workbooks.Open (file)
+Set ws = wb.Worksheets(1)
 
 Call Main
 
@@ -72,6 +111,7 @@ Sub extendParts
 		End If
 		'MsgBox(procType)
 		session.findById("wnd[0]/usr/ctxtRMMG1-MATNR").text = part
+		session.findById("wnd[0]/usr/ctxtRMMG1_REF-MATNR").text = part
 		session.findById("wnd[0]/tbar[0]/btn[0]").press
 		session.findById("wnd[0]/tbar[0]/btn[0]").press
 		session.findById("wnd[1]/tbar[0]/btn[20]").press
@@ -100,6 +140,12 @@ Sub extendParts
 			session.findById("wnd[1]/usr/ctxtRMMG1-VTWEG").text = "01"
 			session.findById("wnd[1]/usr/ctxtRMMG1-LGNUM").text = "U05"
 			session.findById("wnd[1]/usr/ctxtRMMG1-LGTYP").text = "001"
+			session.findById("wnd[1]/usr/ctxtRMMG1_REF-WERKS").text = "500J"
+			session.findById("wnd[1]/usr/ctxtRMMG1_REF-LGORT").text = "0001"
+			session.findById("wnd[1]/usr/ctxtRMMG1_REF-VKORG").text = "5013"
+			session.findById("wnd[1]/usr/ctxtRMMG1_REF-VTWEG").text = "01"
+			
+			
 			'****************************************************************
 			Case "500F"
 			session.findById("wnd[1]/usr/ctxtRMMG1-WERKS").text = "500F"
@@ -231,7 +277,7 @@ Sub extendParts
 						End If
 					
 					'	Profit Center:
-						If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP06/ssubTABFRA1:SAPLMGMM:2000/subSUB5:SAPLMGD1:5802/ctxtMARC-PRCTR").text = "5000000013" Or session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP06/ssubTABFRA1:SAPLMGMM:2000/subSUB5:SAPLMGD1:5802/ctxtMARC-PRCTR").text = "" Then
+						If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP06/ssubTABFRA1:SAPLMGMM:2000/subSUB5:SAPLMGD1:5802/ctxtMARC-PRCTR").text = "5000000024" Or session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP06/ssubTABFRA1:SAPLMGMM:2000/subSUB5:SAPLMGD1:5802/ctxtMARC-PRCTR").text = "" Then
 						profitCenter = plant
 						Select Case profitCenter
 							Case "500C"
@@ -329,16 +375,16 @@ Sub extendParts
 						End If
 					
 					'	In-house Production: 
-						If procType = "E" Or procType = "X" Then
-							If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-DZEIT").text = "" Then
-								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-DZEIT").text = "10"
-							End If
-						End If
+'						If procType = "E" Or procType = "X" Then
+'							If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-DZEIT").text = "" Then
+'								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-DZEIT").text = "10"
+'							End If
+'						End If
 					
 					'	GR Processing Time: 
-						If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-WEBAZ").text = "" Then
-							session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-WEBAZ").text = "1"
-						End If
+'						If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-WEBAZ").text = "" Then
+'							session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/txtMARC-WEBAZ").text = "1"
+'						End If
 					
 					'	SchedMargin Key: 
 						If procType = "F" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP13/ssubTABFRA1:SAPLMGMM:2000/subSUB3:SAPLMGD1:2485/ctxtMARC-FHORI").text = "" Then 
@@ -467,25 +513,25 @@ Sub extendParts
 						End If
 					
 					'	Price Control:
-						PriceControl2=ws.Cells(row,9).Value
-							PriceControl2=Left(PriceControl2,1)
-						If PriceControl2 ="V" Then
-							session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/ctxtMBEW-VPRSV").text = "V"
+'						PriceControl2=ws.Cells(row,9).Value
+'							PriceControl2=Left(PriceControl2,1)
+'						If PriceControl2 ="V" Then
+'							session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/ctxtMBEW-VPRSV").text = "V"
 					'		Moving Price:		
-							If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = "" Then
-								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = ws.Cells(row,10).Value
-							ElseIf session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text <> "" Then
-								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text =ws.Cells(row,10).Value 'session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text
-							End If
-						Else
-						session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/ctxtMBEW-VPRSV").text = "S"
+'							If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = "" Then
+'								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = ws.Cells(row,10).Value
+'							ElseIf session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text <> "" Then
+'								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text =ws.Cells(row,10).Value 'session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text
+'							End If
+'						Else
+'						session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/ctxtMBEW-VPRSV").text = "S"
 					'		Standard Price:
-							If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = "" Then
-								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = ws.Cells(row,10).Value
-							ElseIf session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text <> "" Then
-								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = ws.Cells(row,10).Value 'session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text
-							End If						
-						End If
+'							If session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text = "" Then
+'								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = ws.Cells(row,10).Value
+'							ElseIf session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = "" And session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text <> "" Then
+'								session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-STPRS").text = ws.Cells(row,10).Value 'session.findById("wnd[0]/usr/tabsTABSPR1/tabpSP24/ssubTABFRA1:SAPLMGMM:2000/subSUB2:SAPLMGD1:2800/subSUB2:SAPLMGD1:2802/txtMBEW-VERPR").text
+'							End If						
+'						End If
 						session.findById("wnd[0]/tbar[0]/btn[0]").press
 					'****************************************************************
 					
